@@ -1,21 +1,14 @@
-from flask import Flask, request, render_template, redirect, url_for, jsonify
+from flask import Flask, request, render_template, redirect, url_for
 import pandas as pd
 
 app = Flask(__name__)
 
-# Cargar datos desde el archivo Excel de usuarios
+# Cargar datos desde el archivo Excel
 try:
-    df_usuarios = pd.read_excel("usuarios.xlsx")  # Asegúrate de que el archivo esté en la misma carpeta
+    df = pd.read_excel("usuarios.xlsx")  # Asegúrate de que el archivo esté en la misma carpeta
 except Exception as e:
-    print("Error al cargar el archivo Excel de usuarios:", e)
-    df_usuarios = pd.DataFrame(columns=["Usuario", "Contraseña"])  # Estructura vacía en caso de error
-
-# Cargar datos desde el archivo Excel de alumnos
-try:
-    df_alumnos = pd.read_excel("alumnos.xlsx")  # Archivo con las matrículas y datos de alumnos
-except Exception as e:
-    print("Error al cargar el archivo Excel de alumnos:", e)
-    df_alumnos = pd.DataFrame(columns=["Matrícula", "Nombre", "Grupo", "Promedio", "Estatus"])  # Estructura vacía en caso de error
+    print("Error al cargar el archivo Excel:", e)
+    df = pd.DataFrame(columns=["Usuario", "Contraseña"])  # Estructura vacía en caso de error
 
 @app.route("/")
 def index():
@@ -35,7 +28,7 @@ def login():
         return render_template("index.html", error="El administrador debe iniciar sesión desde la página de administrador.")
 
     # Validar usuario y contraseña en el archivo Excel
-    user_match = df_usuarios[(df_usuarios["Usuario"].str.strip() == username) & (df_usuarios["Contraseña"].astype(str).str.strip() == password)]
+    user_match = df[(df["Usuario"].str.strip() == username) & (df["Contraseña"].astype(str).str.strip() == password)]
 
     if not user_match.empty:
         return redirect(url_for("inicio"))  # Inicio de sesión exitoso para usuarios
@@ -52,7 +45,7 @@ def loginadmin():
         return redirect(url_for("inicio_admi"))
     else:
         # Verificar si el usuario existe en la base de datos pero no es el administrador
-        user_match = df_usuarios[(df_usuarios["Usuario"].str.strip() == username) & (df_usuarios["Contraseña"].astype(str).str.strip() == password)]
+        user_match = df[(df["Usuario"].str.strip() == username) & (df["Contraseña"].astype(str).str.strip() == password)]
         if not user_match.empty:
             return render_template("admin.html", error="Esta página es solo para el administrador.")
         else:
@@ -65,26 +58,6 @@ def inicio():
 @app.route("/inicioadmi")
 def inicio_admi():
     return render_template("inicioadmi.html")  # Página después de iniciar sesión correctamente para el administrador
-
-# Nueva ruta para buscar matrículas
-@app.route("/buscar_matricula", methods=["POST"])
-def buscar_matricula():
-    data = request.get_json()
-    matricula = data.get("matricula")
-
-    # Buscar la matrícula en el archivo de alumnos
-    resultado = df_alumnos[df_alumnos["Matrícula"] == int(matricula)]
-
-    if resultado.empty:
-        return jsonify({"error": "Matrícula no encontrada"}), 404
-
-    # Convertir el resultado a un diccionario
-    resultado_dict = resultado.iloc[0].to_dict()
-
-    # Eliminar la columna 'Matrícula' del resultado
-    resultado_dict.pop("Matrícula", None)
-
-    return jsonify(resultado_dict)
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,19 +1,65 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Index</title>
-  <link rel="stylesheet" href="static/inicioadmi.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Búsqueda de Matrículas</title>
+    <link rel="stylesheet" href="static/matriculas.css">
 </head>
 <body>
-  <div class="container">
-    <div class="Bienvenido">
-      <h1>¡Bienvenido Administrador!</h1>
-      <ul class="list">
-        <li>Yomero</li>
-      </ul>
-    </div>
-  </div>
+    <h1>Bienvenido</h1>
+    <br>
+    <form id="searchForm">
+        <label for="matricula">Matrícula:</label>
+        <input type="text" id="matricula" name="matricula" required>
+        <button type="submit">Buscar</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const matricula = document.getElementById('matricula').value;
+
+            fetch('/buscar_matricula', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ matricula: matricula }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                if (data.error) {
+                    resultDiv.innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Grupo</th>
+                                    <th>Promedio</th>
+                                    <th>Estatus</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${data.Nombre}</td>
+                                    <td>${data.Grupo}</td>
+                                    <td>${data.Promedio}</td>
+                                    <td>${data.Estatus}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
 </body>
 </html>
