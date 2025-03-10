@@ -72,19 +72,26 @@ def buscar_matricula():
     data = request.get_json()
     matricula = data.get("matricula")
 
-    # Buscar la matrícula en el archivo de alumnos
-    resultado = df_alumnos[df_alumnos["Matrícula"] == int(matricula)]
+    try:
+        # Leer el archivo Excel de alumnos en cada búsqueda para obtener datos actualizados
+        df_alumnos = pd.read_excel("alumnos.xlsx")
+        
+        # Convertir la columna "Matrícula" a tipo string para evitar problemas de tipo de dato
+        df_alumnos["Matrícula"] = df_alumnos["Matrícula"].astype(str).str.strip()
+        matricula = str(matricula).strip()
 
-    if resultado.empty:
-        return jsonify({"error": "Matrícula no encontrada"}), 404
+        # Buscar la matrícula en el archivo de alumnos
+        resultado = df_alumnos[df_alumnos["Matrícula"] == matricula]
 
-    # Convertir el resultado a un diccionario
-    resultado_dict = resultado.iloc[0].to_dict()
+        if resultado.empty:
+            return jsonify({"error": "Matrícula no encontrada"}), 404
 
-    # Eliminar la columna 'Matrícula' del resultado
-    resultado_dict.pop("Matrícula", None)
+        # Convertir el resultado a un diccionario
+        resultado_dict = resultado.iloc[0].to_dict()
 
-    return jsonify(resultado_dict)
+        return jsonify(resultado_dict)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
